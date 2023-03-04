@@ -133,6 +133,15 @@ func NewError(code int, msg string) error {
 	}
 }
 
+// ExtractActionMeta ExtractActionMeta
+func ExtractActionMeta(ctx context.Context) *ActionMeta {
+	meta, ok := ctx.Value(ctxMetaKey).(*ActionMeta)
+	if ok {
+		return meta
+	}
+	return nil
+}
+
 type actionFunc func(context.Context, any, any) error
 type Action func() (actionFunc, any, any)
 
