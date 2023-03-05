@@ -5,11 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/roseboy/go-ng/ng"
 	"reflect"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/roseboy/go-ng/ng"
 )
 
 var ctxMetaKey = &ActionMeta{}
@@ -91,9 +92,12 @@ func (p *ActionPlugin) doAction(ctx context.Context, request *ng.Request, respon
 	return nil
 }
 
-func (p *ActionPlugin) RegisterAction(actionName string, actionFunc Action) *ActionPlugin {
-	p.actionMap.Store(actionName, actionFunc)
-	return p
+// RegisterAction register action
+func (p *ActionPlugin) RegisterAction(actionName string, actionFunc actionFunc, request, response any) {
+	if p.ActionMap == nil {
+		p.ActionMap = map[string]Action{}
+	}
+	p.ActionMap[actionName] = NewAction(actionFunc, request, response)
 }
 
 // ActionMeta meta
@@ -125,23 +129,6 @@ func (e *actionError) Error() string {
 	return e.Msg
 }
 
-// NewError error
-func NewError(code int, msg string) error {
-	return &actionError{
-		Code: code,
-		Msg:  msg,
-	}
-}
-
-// ExtractActionMeta ExtractActionMeta
-func ExtractActionMeta(ctx context.Context) *ActionMeta {
-	meta, ok := ctx.Value(ctxMetaKey).(*ActionMeta)
-	if ok {
-		return meta
-	}
-	return nil
-}
-
 type actionFunc func(context.Context, any, any) error
 type Action func() (actionFunc, any, any)
 
@@ -150,4 +137,21 @@ func NewAction(fun actionFunc, req, resp any) Action {
 	return func() (actionFunc, any, any) {
 		return fun, ng.NewInstanceByType(reflect.TypeOf(req)), ng.NewInstanceByType(reflect.TypeOf(resp))
 	}
+}
+
+// NewError new error
+func NewError(code int, msg string) error {
+	return &actionError{
+		Code: code,
+		Msg:  msg,
+	}
+}
+
+// ExtractActionMeta extract meta
+func ExtractActionMeta(ctx context.Context) *ActionMeta {
+	meta, ok := ctx.Value(ctxMetaKey).(*ActionMeta)
+	if ok {
+		return meta
+	}
+	return nil
 }

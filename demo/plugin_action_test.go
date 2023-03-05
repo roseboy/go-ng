@@ -3,10 +3,11 @@ package demo
 import (
 	"context"
 	"fmt"
-	"github.com/roseboy/go-ng/ng"
-	"github.com/roseboy/go-ng/plugin"
 	"testing"
 	"time"
+
+	"github.com/roseboy/go-ng/ng"
+	"github.com/roseboy/go-ng/plugin"
 )
 
 func TestStartActionPlugin(t *testing.T) {
@@ -15,16 +16,10 @@ func TestStartActionPlugin(t *testing.T) {
 	fmt.Println("curl \"localhost:8000/api\" -d'{\"Action\":\"GetGirlFriend\",\"Age\":20}'")
 	fmt.Println()
 
-	var actions = map[string]plugin.Action{
-		"GetGirlFriend": plugin.NewAction(GetGirlFriend, &GetGirlFriendRequest{}, &GetGirlFriendResponse{}),
-	}
+	plg := &plugin.ActionPlugin{Endpoint: "/api"}
+	plg.RegisterAction("GetGirlFriend", GetGirlFriend, &GetGirlFriendRequest{}, &GetGirlFriendResponse{})
 
-	ng.RegisterPlugins(
-		&plugin.ActionPlugin{
-			Endpoint:  "/api",
-			ActionMap: actions,
-		},
-	)
+	ng.RegisterPlugins(plg)
 	ng.Start(8000)
 
 	time.Sleep(24 * time.Hour)
