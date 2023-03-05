@@ -37,7 +37,10 @@ func (s *server) httpHandler(rw http.ResponseWriter, request *http.Request) {
 	plugins := s.getPluginByRequest(request)
 	if len(plugins) == 0 {
 		rw.WriteHeader(404)
-		_, _ = rw.Write([]byte("404 page not found"))
+		_, err := fmt.Fprint(rw, "404 page not found")
+		if err != nil {
+			panic(err)
+		}
 		return
 	}
 
@@ -48,7 +51,10 @@ func (s *server) httpHandler(rw http.ResponseWriter, request *http.Request) {
 	err := doInterceptor(req, resp, req.plugins[req.pluginPos])
 	if err != nil {
 		rw.WriteHeader(500)
-		fmt.Fprint(rw, err.Error())
+		_, err = fmt.Fprint(rw, err.Error())
+		if err != nil {
+			panic(err)
+		}
 		return
 	}
 
@@ -58,7 +64,10 @@ func (s *server) httpHandler(rw http.ResponseWriter, request *http.Request) {
 	if resp.Status > 0 {
 		rw.WriteHeader(resp.Status)
 	}
-	fmt.Fprint(rw, resp.Body)
+	_, err = fmt.Fprint(rw, resp.Body)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func doInterceptor(req *Request, resp *Response, plg *plugin) error {
@@ -89,7 +98,9 @@ func Invoke(req *Request, resp *Response) error {
 		header[k] = v
 	}
 
-	defer response.Body.Close()
+	defer func() {
+		_ = response.Body.Close()
+	}()
 	body := response.Body
 	if strings.Contains(response.Header.Get("Content-Encoding"), "gzip") {
 		body, err = gzip.NewReader(body)
