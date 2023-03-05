@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/roseboy/go-ng/util"
 	"reflect"
 	"strings"
 	"sync"
@@ -25,7 +26,7 @@ type ActionPlugin struct {
 // Config config
 func (p *ActionPlugin) Config(config *ng.PluginConfig) {
 	config.SetName("ng_action_plugin")
-	config.AddLocation(ng.If(strings.HasPrefix(p.Endpoint, "/"), p.Endpoint, "/"+p.Endpoint))
+	config.AddLocation(util.If(strings.HasPrefix(p.Endpoint, "/"), p.Endpoint, "/"+p.Endpoint))
 	for k, v := range p.ActionMap {
 		p.actionMap.Store(k, v)
 	}
@@ -135,7 +136,7 @@ type Action func() (actionFunc, any, any)
 // NewAction new
 func NewAction(fun actionFunc, req, resp any) Action {
 	return func() (actionFunc, any, any) {
-		return fun, ng.NewInstanceByType(reflect.TypeOf(req)), ng.NewInstanceByType(reflect.TypeOf(resp))
+		return fun, util.NewInstanceByType(reflect.TypeOf(req)), util.NewInstanceByType(reflect.TypeOf(resp))
 	}
 }
 

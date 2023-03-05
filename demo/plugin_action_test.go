@@ -19,9 +19,8 @@ func TestStartActionPlugin(t *testing.T) {
 	plg := &plugin.ActionPlugin{Endpoint: "/api"}
 	plg.RegisterAction("GetGirlFriend", GetGirlFriend, &GetGirlFriendRequest{}, &GetGirlFriendResponse{})
 
-	ng.RegisterPlugins(plg)
-	ng.Start(8000)
-
+	err := ng.NewServer().RegisterPlugins(plg).Start(8000)
+	panic(err)
 	time.Sleep(24 * time.Hour)
 }
 

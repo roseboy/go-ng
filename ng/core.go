@@ -7,28 +7,42 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"sync"
 )
 
+type server struct {
+	pluginList            []*plugin
+	pluginURIMappingCache sync.Map
+}
+
+// NewServer new ng server
+func NewServer() *server {
+	return &server{
+		pluginList:            make([]*plugin, 0),
+		pluginURIMappingCache: sync.Map{},
+	}
+}
+
 // Start start a ng server
-func Start(port int) error {
+func (s *server) Start(port int) error {
 	srv := &http.Server{Addr: fmt.Sprintf(":%d", port)}
-	http.HandleFunc("/", httpHandler)
-	log.Printf("Ng started on port: %d", port)
+	http.HandleFunc("/", s.httpHandler)
+	log.Printf("ng server started on port: %d", port)
 	err := srv.ListenAndServe()
 	return err
 }
 
 // httpHandler http handle
-func httpHandler(rw http.ResponseWriter, request *http.Request) {
-	plugins := getPluginByRequest(request)
+func (s *server) httpHandler(rw http.ResponseWriter, request *http.Request) {
+	plugins := s.getPluginByRequest(request)
 	if len(plugins) == 0 {
 		rw.WriteHeader(404)
-		rw.Write([]byte("404 page not found"))
+		_, _ = rw.Write([]byte("404 page not found"))
 		return
 	}
 
 	resp := &Response{ResponseWriter: rw}
-	req := NewRequest().HttpRequest(request).GetRequest()
+	req := newRequest().HttpRequest(request).GetRequest()
 	req.plugins = plugins
 
 	err := doInterceptor(req, resp, req.plugins[req.pluginPos])
@@ -61,7 +75,7 @@ func Invoke(req *Request, resp *Response) error {
 		return doInterceptor(req, resp, req.plugins[req.pluginPos])
 	}
 
-	response, err := NewRequest().SendRequest(req)
+	response, err := newRequest().SendRequest(req)
 	if err != nil {
 		return err
 	}

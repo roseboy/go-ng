@@ -35,8 +35,8 @@ type Response struct {
 	Status         int
 }
 
-// NewRequest 创建新的请求
-func NewRequest() *requestBuild {
+// newRequest 创建新的请求
+func newRequest() *requestBuild {
 	return &requestBuild{request: &Request{Headers: make(map[string]string), Params: make(map[string]string)}}
 }
 

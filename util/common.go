@@ -1,4 +1,4 @@
-package ng
+package util
 
 import (
 	"reflect"
