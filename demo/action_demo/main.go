@@ -14,7 +14,7 @@ func main() {
 	plg := &plugin.ActionPlugin{Endpoint: "/api"}
 	plg.RegisterAction("GetGirlfriend", GetGirlfriend, &GetGirlfriendRequest{}, &GetGirlfriendResponse{})
 
-	err := ng.NewServer().RegisterPlugins(plg).Start(8000)
+	err := ng.NewServer(8000).RegisterPlugins(plg).Start()
 	if err != nil {
 		panic(err)
 	}

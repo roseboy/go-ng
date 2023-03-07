@@ -9,7 +9,7 @@ func main() {
 	fmt.Println("open 'http://localhost:8000' in browser")
 	fmt.Println()
 
-	err := ng.NewServer().RegisterPlugins(&DemoPlugin{}).Start(8000)
+	err := ng.NewServer(8000).RegisterPlugins(&DemoPlugin{}).Start()
 	if err != nil {
 		panic(err)
 	}

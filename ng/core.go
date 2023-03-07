@@ -11,23 +11,25 @@ import (
 )
 
 type server struct {
+	port                  int
 	pluginList            []*plugin
 	pluginURIMappingCache sync.Map
 }
 
 // NewServer new ng server
-func NewServer() *server {
+func NewServer(port int) *server {
 	return &server{
+		port:                  port,
 		pluginList:            make([]*plugin, 0),
 		pluginURIMappingCache: sync.Map{},
 	}
 }
 
 // Start start a ng server
-func (s *server) Start(port int) error {
-	srv := &http.Server{Addr: fmt.Sprintf(":%d", port)}
+func (s *server) Start() error {
+	srv := &http.Server{Addr: fmt.Sprintf(":%d", s.port)}
 	http.HandleFunc("/", s.httpHandler)
-	log.Printf("ng server started on port: %d", port)
+	log.Printf("ng server started on port: %d", s.port)
 	err := srv.ListenAndServe()
 	return err
 }
