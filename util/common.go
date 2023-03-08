@@ -13,6 +13,16 @@ func If[T any](ok bool, v1, v2 T) T {
 	}
 }
 
+// In if in
+func In[T comparable](arr []T, v T) bool {
+	for _, a := range arr {
+		if a == v {
+			return true
+		}
+	}
+	return false
+}
+
 // NewInstanceByType new
 func NewInstanceByType(typ reflect.Type) interface{} {
 	if typ.Kind() == reflect.Ptr {

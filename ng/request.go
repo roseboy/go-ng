@@ -22,7 +22,7 @@ type Request struct {
 	Params        map[string]string
 	Headers       map[string]string
 	AllowRedirect bool
-	plugins       []*plugin
+	plugins       []*pluginWrapper
 	pluginPos     int
 }
 
@@ -52,7 +52,6 @@ func (rb *requestBuild) HttpRequest(request *http.Request) *requestBuild {
 	}
 
 	rb.request.HttpRequest = request
-	rb.request.Url = request.URL.RequestURI()
 	rb.request.Method = request.Method
 	rb.request.Headers = header
 	rb.request.Body = string(body)

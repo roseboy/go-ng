@@ -10,10 +10,18 @@ import (
 	"sync"
 )
 
+const (
+	HttpCodeServerError = 500
+	HttpCodeNotFound    = 404
+	HttpCodeNormal      = 200
+
+	HttpCodeNotFoundText = "404 page not found"
+)
+
 type server struct {
 	port                  int
 	pluginList            []*plugin
-	pluginURIMappingCache sync.Map
+	cacheMappingPluginURL sync.Map
 }
 
 // NewServer new ng server
@@ -21,7 +29,7 @@ func NewServer(port int) *server {
 	return &server{
 		port:                  port,
 		pluginList:            make([]*plugin, 0),
-		pluginURIMappingCache: sync.Map{},
+		cacheMappingPluginURL: sync.Map{},
 	}
 }
 
@@ -38,8 +46,8 @@ func (s *server) Start() error {
 func (s *server) httpHandler(rw http.ResponseWriter, request *http.Request) {
 	plugins := s.getPluginByRequest(request)
 	if len(plugins) == 0 {
-		rw.WriteHeader(404)
-		_, err := fmt.Fprint(rw, "404 page not found")
+		rw.WriteHeader(HttpCodeNotFound)
+		_, err := fmt.Fprint(rw, HttpCodeNotFoundText)
 		if err != nil {
 			panic(err)
 		}
@@ -52,7 +60,7 @@ func (s *server) httpHandler(rw http.ResponseWriter, request *http.Request) {
 
 	err := doInterceptor(req, resp, req.plugins[req.pluginPos])
 	if err != nil {
-		rw.WriteHeader(500)
+		rw.WriteHeader(HttpCodeServerError)
 		_, err = fmt.Fprint(rw, err.Error())
 		if err != nil {
 			panic(err)
@@ -72,18 +80,24 @@ func (s *server) httpHandler(rw http.ResponseWriter, request *http.Request) {
 	}
 }
 
-func doInterceptor(req *Request, resp *Response, plg *plugin) error {
-	req.pluginPos++
+func doInterceptor(req *Request, resp *Response, plg *pluginWrapper) error {
 	if plg.proxyPass != "" {
 		req.Url = fmt.Sprintf("%s%s", strings.TrimSuffix(plg.proxyPass, "/"), req.HttpRequest.RequestURI)
 	}
-	return plg.interceptor(req, resp)
+	return plg.plugin.interceptor(req, resp)
 }
 
 // Invoke invoke
 func Invoke(req *Request, resp *Response) error {
+	req.pluginPos++
 	if req.pluginPos < len(req.plugins) {
 		return doInterceptor(req, resp, req.plugins[req.pluginPos])
+	}
+
+	if len(req.Url) == 0 {
+		resp.Status = HttpCodeNotFound
+		resp.Body = HttpCodeNotFoundText
+		return nil
 	}
 
 	response, err := newRequest().SendRequest(req)

@@ -25,8 +25,9 @@ type ActionPlugin struct {
 
 // Config config
 func (p *ActionPlugin) Config(config *ng.PluginConfig) {
-	config.SetName("ng_action_plugin")
-	config.AddLocation(util.If(strings.HasPrefix(p.Endpoint, "/"), p.Endpoint, "/"+p.Endpoint))
+	path := util.If(strings.HasPrefix(p.Endpoint, "/"), p.Endpoint, "/"+p.Endpoint)
+	config.Name("ng_action_plugin")
+	config.ProxyPass(path, "")
 	for k, v := range p.ActionMap {
 		p.actionMap.Store(k, v)
 	}
@@ -55,7 +56,7 @@ func (p *ActionPlugin) Interceptor(request *ng.Request, response *ng.Response) e
 			actionResponse.Error = &actionError{Code: -1, Msg: err.Error()}
 		}
 		data, _ := json.Marshal(actionResponse)
-		response.Body, response.Status = string(data), 200
+		response.Body, response.Status = string(data), ng.HttpCodeNormal
 	}
 	return nil
 }
@@ -89,7 +90,7 @@ func (p *ActionPlugin) doAction(ctx context.Context, request *ng.Request, respon
 
 	actionResponse := &actionResponse{RequestId: meta.RequestId, Response: resp}
 	data, _ := json.Marshal(actionResponse)
-	response.Body, response.Status = string(data), 200
+	response.Body, response.Status = string(data), ng.HttpCodeNormal
 	return nil
 }
 

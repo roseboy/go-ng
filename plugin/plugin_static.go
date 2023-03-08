@@ -16,8 +16,8 @@ func (p *StaticPlugin) Config(config *ng.PluginConfig) {
 	if p.WebRoot == "" {
 		p.WebRoot = "www"
 	}
-	config.SetName("ng_plugin_file_server")
-	config.AddLocation("/")
+	config.Name("ng_file_server_plugin")
+	config.ProxyPass("/", "")
 }
 
 // Interceptor interceptor

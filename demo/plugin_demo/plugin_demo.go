@@ -12,8 +12,8 @@ type DemoPlugin struct{}
 
 // Config config
 func (v *DemoPlugin) Config(config *ng.PluginConfig) {
-	config.SetName("ng_plugin_demo")
-	config.AddProxyPass("/", "https://news.baidu.com/")
+	config.Name("ng_demo_plugin")
+	config.ProxyPass("/", "https://news.baidu.com/")
 }
 
 // Interceptor interceptor
