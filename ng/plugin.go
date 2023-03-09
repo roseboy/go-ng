@@ -104,12 +104,13 @@ func (s *server) getPluginByRequest(request *http.Request) []*pluginWrapper {
 		)
 
 		for location, reg := range plg.locationRegexps {
-			if reg.MatchString(request.URL.Path) {
-				if plg.locationWeights[location] > weight {
-					weight = plg.locationWeights[location]
-					maxPlg = plg
-					proxyPass = plg.locationProxyPasses[location]
-				}
+			if !reg.MatchString(request.URL.Path) {
+				continue
+			}
+			if plg.locationWeights[location] > weight {
+				weight = plg.locationWeights[location]
+				maxPlg = plg
+				proxyPass = plg.locationProxyPasses[location]
 			}
 		}
 		if maxPlg != nil {

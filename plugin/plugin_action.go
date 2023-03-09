@@ -48,16 +48,18 @@ func (p *ActionPlugin) Interceptor(request *ng.Request, response *ng.Response) e
 	}
 
 	err := p.doAction(ctx, request, response)
-	if err != nil {
-		actionResponse := &actionResponse{RequestId: requestId}
-		if e, ok := err.(*actionError); ok {
-			actionResponse.Error = e
-		} else {
-			actionResponse.Error = &actionError{Code: -1, Msg: err.Error()}
-		}
-		data, _ := json.Marshal(actionResponse)
-		response.Body, response.Status = string(data), ng.HttpCodeNormal
+	if err == nil {
+		return nil
 	}
+
+	actionResponse := &actionResponse{RequestId: requestId}
+	if e, ok := err.(*actionError); ok {
+		actionResponse.Error = e
+	} else {
+		actionResponse.Error = &actionError{Code: -1, Msg: err.Error()}
+	}
+	data, _ := json.Marshal(actionResponse)
+	response.Body, response.Status = string(data), ng.HttpCodeNormal
 	return nil
 }
 
