@@ -19,7 +19,8 @@ const (
 )
 
 type server struct {
-	port                  int
+	Port                  int
+	CertFile, KeyFile     string
 	pluginList            []*plugin
 	cacheMappingPluginURL sync.Map
 }
@@ -27,18 +28,22 @@ type server struct {
 // NewServer new ng server
 func NewServer(port int) *server {
 	return &server{
-		port:                  port,
+		Port:                  port,
 		pluginList:            make([]*plugin, 0),
 		cacheMappingPluginURL: sync.Map{},
 	}
 }
 
 // Start start a ng server
-func (s *server) Start() error {
-	srv := &http.Server{Addr: fmt.Sprintf(":%d", s.port)}
+func (s *server) Start() (err error) {
+	srv := &http.Server{Addr: fmt.Sprintf(":%d", s.Port)}
 	http.HandleFunc("/", s.httpHandler)
-	log.Printf("ng server started on port: %d", s.port)
-	err := srv.ListenAndServe()
+	log.Printf("ng server started on port: %d", s.Port)
+	if s.CertFile != "" && s.KeyFile != "" {
+		err = srv.ListenAndServeTLS(s.CertFile, s.KeyFile)
+	} else {
+		err = srv.ListenAndServe()
+	}
 	return err
 }
 

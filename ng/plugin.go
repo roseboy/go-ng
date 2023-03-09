@@ -30,6 +30,7 @@ type pluginInterface interface {
 
 // PluginConfig plugin config
 type PluginConfig struct {
+	Server    *server
 	name      string
 	hosts     []string
 	locations map[string]string
@@ -57,6 +58,7 @@ func (s *server) RegisterPlugins(plugins ...pluginInterface) *server {
 	for _, pg := range plugins {
 		config := &PluginConfig{
 			locations: map[string]string{},
+			Server:    s,
 		}
 		pg.Config(config)
 

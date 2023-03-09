@@ -10,7 +10,7 @@ func main() {
 	fmt.Println("open 'http://localhost:8000/test' in browser")
 	fmt.Println()
 
-	plg := &plugin.LoadBalancePlugin{
+	lb := &plugin.LoadBalancePlugin{
 		ServerName: "localhost:8000",
 		Location:   "/test",
 		ProxyPassList: []string{
@@ -20,7 +20,19 @@ func main() {
 			"http://127.0.0.1:9091",
 		},
 	}
-	err := ng.NewServer(8000).RegisterPlugins(plg).Start()
+
+	lb2 := &plugin.LoadBalancePlugin{
+		ServerName: "test.com:8000",
+		Location:   "/",
+		ProxyPassList: []string{
+			"http://127.0.0.1:18080",
+			"http://127.0.0.1:19090",
+			"http://127.0.0.1:18081",
+			"http://127.0.0.1:19091",
+		},
+	}
+
+	err := ng.NewServer(8000).RegisterPlugins(lb, lb2).Start()
 	if err != nil {
 		panic(err)
 	}
