@@ -11,7 +11,7 @@ func main() {
 	fmt.Println()
 
 	lb := &plugin.LoadBalancePlugin{
-		ServerName: "localhost:8000",
+		ServerName: "localhost",
 		Location:   "/test",
 		ProxyPassList: []string{
 			"http://127.0.0.1:8080",
@@ -22,7 +22,7 @@ func main() {
 	}
 
 	lb2 := &plugin.LoadBalancePlugin{
-		ServerName: "test.com:8000",
+		ServerName: "test.com",
 		Location:   "/",
 		ProxyPassList: []string{
 			"http://127.0.0.1:18080",

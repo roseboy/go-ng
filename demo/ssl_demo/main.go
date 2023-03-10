@@ -8,16 +8,18 @@ import (
 
 func main() {
 	fmt.Println("edit host file: 127.0.0.1 test.com")
-	fmt.Println("open 'https://test.com:8000/' in browser")
+	fmt.Println("open 'https://test.com' in browser")
 	fmt.Println()
 
 	ssl := &plugin.SSLPlugin{
-		CertFile: "/data/test.crt",
-		KeyFile:  "/data/test.key",
+		CertFile:       "./demo/ssl_demo/test.crt",
+		KeyFile:        "./demo/ssl_demo/test.key",
+		AutoRedirect:   true,
+		HttpServerPort: 80,
 	}
 
 	lb := &plugin.LoadBalancePlugin{
-		ServerName: "test.com:8000",
+		ServerName: "test.com",
 		Location:   "/",
 		ProxyPassList: []string{
 			"http://127.0.0.1:8080",
@@ -27,7 +29,7 @@ func main() {
 		},
 	}
 
-	err := ng.NewServer(8000).RegisterPlugins(lb, ssl).Start()
+	err := ng.NewServer(443).RegisterPlugins(lb, ssl).Start()
 	if err != nil {
 		panic(err)
 	}

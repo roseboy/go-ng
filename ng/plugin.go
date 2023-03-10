@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"regexp"
+	"strings"
 )
 
 type plugin struct {
@@ -91,9 +92,10 @@ func (s *server) getPluginByRequest(request *http.Request) []*pluginWrapper {
 		return plugins.([]*pluginWrapper)
 	}
 
+	host := strings.Split(request.Host, ":")[0]
 	plgWrappers := make([]*pluginWrapper, 0)
 	for _, plg := range s.pluginList {
-		if len(plg.hosts) > 0 && !util.In(plg.hosts, request.Host) {
+		if len(plg.hosts) > 0 && !util.In(plg.hosts, host) {
 			continue
 		}
 

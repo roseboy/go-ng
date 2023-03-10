@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/roseboy/go-ng/util"
+	"net/http"
 	"reflect"
 	"strings"
 	"sync"
@@ -59,7 +60,7 @@ func (p *ActionPlugin) Interceptor(request *ng.Request, response *ng.Response) e
 		actionResponse.Error = &actionError{Code: -1, Msg: err.Error()}
 	}
 	data, _ := json.Marshal(actionResponse)
-	response.Body, response.Status = string(data), ng.HttpCodeNormal
+	response.Body, response.Status = string(data), http.StatusOK
 	return nil
 }
 
@@ -92,7 +93,7 @@ func (p *ActionPlugin) doAction(ctx context.Context, request *ng.Request, respon
 
 	actionResponse := &actionResponse{RequestId: meta.RequestId, Response: resp}
 	data, _ := json.Marshal(actionResponse)
-	response.Body, response.Status = string(data), ng.HttpCodeNormal
+	response.Body, response.Status = string(data), http.StatusOK
 	return nil
 }
 

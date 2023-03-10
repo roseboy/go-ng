@@ -2,20 +2,13 @@ package ng
 
 import (
 	"compress/gzip"
+	"errors"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"strings"
 	"sync"
-)
-
-const (
-	HttpCodeServerError = 500
-	HttpCodeNotFound    = 404
-	HttpCodeNormal      = 200
-
-	HttpCodeNotFoundText = "404 page not found"
 )
 
 type server struct {
@@ -36,13 +29,14 @@ func NewServer(port int) *server {
 
 // Start start a ng server
 func (s *server) Start() (err error) {
-	srv := &http.Server{Addr: fmt.Sprintf(":%d", s.Port)}
-	http.HandleFunc("/", s.httpHandler)
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", s.httpHandler)
+	addr := fmt.Sprintf(":%d", s.Port)
 	log.Printf("ng server started on port: %d", s.Port)
 	if s.CertFile != "" && s.KeyFile != "" {
-		err = srv.ListenAndServeTLS(s.CertFile, s.KeyFile)
+		err = http.ListenAndServeTLS(addr, s.CertFile, s.KeyFile, mux)
 	} else {
-		err = srv.ListenAndServe()
+		err = http.ListenAndServe(addr, mux)
 	}
 	return err
 }
@@ -51,25 +45,17 @@ func (s *server) Start() (err error) {
 func (s *server) httpHandler(rw http.ResponseWriter, request *http.Request) {
 	plugins := s.getPluginByRequest(request)
 	if len(plugins) == 0 {
-		rw.WriteHeader(HttpCodeNotFound)
-		_, err := fmt.Fprint(rw, HttpCodeNotFoundText)
-		if err != nil {
-			panic(err)
-		}
+		http.NotFound(rw, request)
 		return
 	}
 
-	resp := &Response{ResponseWriter: rw}
+	resp := &Response{ResponseWriter: rw, Headers: map[string]string{}}
 	req := newRequest().HttpRequest(request).GetRequest()
 	req.plugins = plugins
 
 	err := doInterceptor(req, resp, req.plugins[req.pluginPos])
 	if err != nil {
-		rw.WriteHeader(HttpCodeServerError)
-		_, err = fmt.Fprint(rw, err.Error())
-		if err != nil {
-			panic(err)
-		}
+		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -79,9 +65,9 @@ func (s *server) httpHandler(rw http.ResponseWriter, request *http.Request) {
 	if resp.Status > 0 {
 		rw.WriteHeader(resp.Status)
 	}
-	_, err = fmt.Fprint(rw, resp.Body)
+	_, err = rw.Write([]byte(resp.Body))
 	if err != nil {
-		panic(err)
+		http.Error(rw, err.Error(), http.StatusInternalServerError)
 	}
 }
 
@@ -100,9 +86,7 @@ func Invoke(req *Request, resp *Response) error {
 	}
 
 	if len(req.Url) == 0 {
-		resp.Status = HttpCodeNotFound
-		resp.Body = HttpCodeNotFoundText
-		return nil
+		return errors.New("proxy pass url not found")
 	}
 
 	response, err := newRequest().SendRequest(req)
