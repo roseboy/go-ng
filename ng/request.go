@@ -3,7 +3,6 @@ package ng
 import (
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"strings"
 )
@@ -162,7 +161,7 @@ func (rb *requestBuild) SendRequest(req *Request) (*http.Response, error) {
 		return resp, err
 	}
 
-	log.Println(request.Method, request.URL)
+	//log.Println(request.Method, request.URL)
 	for k, v := range req.Headers {
 		request.Header.Set(k, v)
 	}
