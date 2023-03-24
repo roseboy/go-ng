@@ -17,13 +17,18 @@ type SSLPlugin struct {
 // Config config
 func (p *SSLPlugin) Config(config *ng.PluginConfig) {
 	config.Name("ng_ssl_plugin")
-	config.Server.CertFile = p.CertFile
-	config.Server.KeyFile = p.KeyFile
+	config.Server.WithTLS(p.CertFile, p.KeyFile)
 	if p.AutoRedirect && p.HttpServerPort <= 0 {
 		panic("SSLPlugin.HttpServerPort error")
 	}
 	if p.AutoRedirect {
-		go ng.NewServer(p.HttpServerPort).RegisterPlugins(&redirectSSLPlugin{httpsPort: config.Server.Port}).Start()
+		go func() {
+			err := ng.NewServer(p.HttpServerPort).
+				RegisterPlugins(&redirectSSLPlugin{httpsPort: config.Server.Port}).Start()
+			if err != nil {
+				panic(err)
+			}
+		}()
 	}
 }
 

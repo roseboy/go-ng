@@ -66,7 +66,7 @@ func (s *server) RegisterPlugins(plugins ...pluginInterface) *server {
 		if config.name == "" {
 			panic("plugin name can not be empty")
 		}
-		log.Printf("RegisterPlugin: %s %v", config.name, config.locations)
+		log.Printf("register plugin: %s", config.name)
 
 		plg := &plugin{
 			name:                config.name,

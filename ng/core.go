@@ -13,7 +13,7 @@ import (
 
 type server struct {
 	Port                  int
-	CertFile, KeyFile     string
+	certFile, keyFile     string
 	pluginList            []*plugin
 	cacheMappingPluginURL sync.Map
 }
@@ -33,12 +33,18 @@ func (s *server) Start() (err error) {
 	mux.HandleFunc("/", s.httpHandler)
 	addr := fmt.Sprintf(":%d", s.Port)
 	log.Printf("ng server started on port: %d", s.Port)
-	if s.CertFile != "" && s.KeyFile != "" {
-		err = http.ListenAndServeTLS(addr, s.CertFile, s.KeyFile, mux)
+	if s.certFile != "" && s.keyFile != "" {
+		err = http.ListenAndServeTLS(addr, s.certFile, s.keyFile, mux)
 	} else {
 		err = http.ListenAndServe(addr, mux)
 	}
 	return err
+}
+
+// WithTLS set tls
+func (s *server) WithTLS(certFile, keyFile string) *server {
+	s.certFile, s.keyFile = certFile, keyFile
+	return s
 }
 
 // httpHandler http handle

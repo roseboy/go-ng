@@ -102,7 +102,7 @@ func (p *ActionPlugin) RegisterAction(actionName string, actionFunc actionFunc, 
 	if p.ActionMap == nil {
 		p.ActionMap = map[string]Action{}
 	}
-	p.ActionMap[actionName] = NewAction(actionFunc, request, response)
+	p.ActionMap[actionName] = NewAction(actionFunc, reflect.TypeOf(request), reflect.TypeOf(response))
 }
 
 // ActionMeta meta
@@ -138,9 +138,9 @@ type actionFunc func(context.Context, any, any) error
 type Action func() (actionFunc, any, any)
 
 // NewAction new
-func NewAction(fun actionFunc, req, resp any) Action {
+func NewAction(fun actionFunc, reqType, respType reflect.Type) Action {
 	return func() (actionFunc, any, any) {
-		return fun, util.NewInstanceByType(reflect.TypeOf(req)), util.NewInstanceByType(reflect.TypeOf(resp))
+		return fun, util.NewInstanceByType(reqType), util.NewInstanceByType(respType)
 	}
 }
 
