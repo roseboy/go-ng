@@ -2,10 +2,12 @@ package plugin
 
 import (
 	"context"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/roseboy/go-ng/util"
+	"math"
 	"net/http"
 	"reflect"
 	"strings"
@@ -15,13 +17,19 @@ import (
 	"github.com/roseboy/go-ng/ng"
 )
 
+const (
+	expireSecond = 10
+)
+
 var ctxMetaKey = &ActionMeta{}
 
 // ActionPlugin action
 type ActionPlugin struct {
-	Endpoint  string
-	ActionMap map[string]Action
-	actionMap sync.Map
+	Endpoint       string
+	ActionMap      map[string]Action
+	SignatureCheck bool
+	AuthInfoFunc   func(string) (uint64, string)
+	actionMap      sync.Map
 }
 
 // Config config
@@ -37,48 +45,70 @@ func (p *ActionPlugin) Config(config *ng.PluginConfig) {
 // Interceptor interceptor
 func (p *ActionPlugin) Interceptor(request *ng.Request, response *ng.Response) error {
 	var (
-		requestId = fmt.Sprintf("s%d", time.Now().UnixNano())
-		meta      = &ActionMeta{RequestId: requestId, Headers: map[string]string{}}
-		ctx       = context.WithValue(context.Background(), ctxMetaKey, meta)
+		err       error
+		requestId string
 	)
 
-	response.SetHeader("Content-Type", "application/json")
-	response.SetHeader("X-Request-Id", requestId)
-	for k, v := range request.Headers {
-		meta.Headers[k] = v
-	}
+	defer func() {
+		if err == nil {
+			return
+		}
+		actionResponse := &actionResponse{RequestId: requestId}
+		if e, ok := err.(*actionError); ok {
+			actionResponse.Error = e
+		} else {
+			actionResponse.Error = &actionError{Code: -1, Msg: err.Error()}
+		}
+		data, _ := json.Marshal(actionResponse)
+		response.Body, response.Status = string(data), http.StatusOK
+	}()
 
-	err := p.doAction(ctx, request, response)
-	if err == nil {
+	var actionMeta ActionMeta
+	err = json.Unmarshal([]byte(request.Body), &actionMeta)
+	if err != nil {
 		return nil
 	}
 
-	actionResponse := &actionResponse{RequestId: requestId}
-	if e, ok := err.(*actionError); ok {
-		actionResponse.Error = e
-	} else {
-		actionResponse.Error = &actionError{Code: -1, Msg: err.Error()}
+	requestId = actionMeta.RequestId
+	requestId = util.If(requestId == "", fmt.Sprintf("s%d", time.Now().UnixNano()), requestId)
+	actionMeta.RequestId = requestId
+	response.SetHeader("Content-Type", "application/json")
+	response.SetHeader("X-Request-Id", requestId)
+	ctx := context.WithValue(context.Background(), ctxMetaKey, &actionMeta)
+
+	if p.SignatureCheck {
+		err = p.checkSignature(ctx, request)
 	}
-	data, _ := json.Marshal(actionResponse)
-	response.Body, response.Status = string(data), http.StatusOK
+	if err != nil {
+		return nil
+	}
+
+	err = p.doAction(ctx, request, response)
 	return nil
 }
 
 func (p *ActionPlugin) doAction(ctx context.Context, request *ng.Request, response *ng.Response) error {
 	var meta = ctx.Value(ctxMetaKey).(*ActionMeta)
-	actionRequest := actionRequest{}
-	err := json.Unmarshal([]byte(request.Body), &actionRequest)
-	if err != nil {
-		return err
+	meta.Headers = make(map[string]string)
+	for k, v := range request.Headers {
+		meta.Headers[k] = v
 	}
 
-	actionFunc, ok := p.actionMap.Load(actionRequest.Action)
+	actionFunc, ok := p.actionMap.Load(meta.Action)
 	if !ok {
 		return errors.New("action not found")
 	}
 
 	fun, req, resp := actionFunc.(Action)()
-	err = json.Unmarshal([]byte(request.Body), req)
+	err := json.Unmarshal([]byte(request.Body), req)
+	if err != nil {
+		return err
+	}
+	metaData, err := json.Marshal(meta)
+	if err != nil {
+		return err
+	}
+	err = json.Unmarshal(metaData, req)
 	if err != nil {
 		return err
 	}
@@ -107,13 +137,17 @@ func (p *ActionPlugin) RegisterAction(actionName string, actionFunc actionFunc, 
 
 // ActionMeta meta
 type ActionMeta struct {
-	RequestId string
-	Headers   map[string]string
-}
+	Headers map[string]string
 
-// actionRequest request
-type actionRequest struct {
-	Action string
+	Action    string
+	AppId     uint64
+	RequestId string
+	Nonce     string
+	SecretId  string
+	Timestamp int64
+	//Version   string
+	//Region    string
+	//Language  string
 }
 
 // actionResponse response
@@ -159,4 +193,73 @@ func ExtractActionMeta(ctx context.Context) *ActionMeta {
 		return meta
 	}
 	return nil
+}
+
+func (p *ActionPlugin) checkSignature(ctx context.Context, request *ng.Request) error {
+	if p.AuthInfoFunc == nil {
+		return NewError(http.StatusUnauthorized, "AuthFailure.AuthInfoError")
+	}
+
+	var meta = ctx.Value(ctxMetaKey).(*ActionMeta)
+	authorization := strings.Split(request.Headers["Authorization"], ";")
+	if len(authorization) < 2 {
+		return NewError(http.StatusUnauthorized, "AuthFailure.SignatureFailure")
+	}
+	secretId := authorization[0]
+	reqSign := authorization[1]
+	appId, secretKey := p.AuthInfoFunc(secretId)
+	if appId == 0 {
+		return NewError(http.StatusUnauthorized, "AuthFailure.AppNotExist")
+	}
+
+	nowTimestamp := time.Now().Unix()
+	timestamp := meta.Timestamp
+	if math.Abs(float64(timestamp-nowTimestamp)) > expireSecond {
+		timestamp = nowTimestamp
+	}
+	sign := CalcSignature(&CalcSignatureArgs{
+		Service:   p.Endpoint,
+		Timestamp: timestamp,
+		Method:    request.HttpRequest.Method,
+		Host:      request.HttpRequest.Host,
+		URI:       request.HttpRequest.RequestURI,
+		Payload:   request.Body,
+		SecretKey: secretKey,
+	})
+
+	if reqSign != sign {
+		return NewError(http.StatusUnauthorized, "AuthFailure.SignatureFailure")
+	}
+
+	meta.AppId = appId
+	meta.SecretId = secretId
+	return nil
+}
+
+// CalcSignatureArgs signature args
+type CalcSignatureArgs struct {
+	Service   string
+	Timestamp int64
+	Method    string
+	Host      string
+	URI       string
+	Payload   string
+	SecretKey string
+}
+
+// CalcSignature calc signature
+func CalcSignature(args *CalcSignatureArgs) string {
+	hashedPayload := util.SHA256Hex(args.Payload)
+	canonicalRequest := fmt.Sprintf("%s;%s;%s;%d;%s",
+		args.Method,
+		args.Host,
+		args.URI,
+		args.Timestamp,
+		hashedPayload)
+	date := time.Unix(args.Timestamp, 0).UTC().Format("2006-01-02")
+	secretDate := util.HMacSHA256(date, args.SecretKey)
+	secretService := util.HMacSHA256(args.Service, secretDate)
+	signatureString := util.HMacSHA256(canonicalRequest, secretService)
+	signature := hex.EncodeToString([]byte(signatureString))
+	return signature
 }

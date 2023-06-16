@@ -1,6 +1,9 @@
 package util
 
 import (
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 	"reflect"
 )
 
@@ -33,4 +36,17 @@ func NewInstanceByType(typ reflect.Type) interface{} {
 		dst := reflect.New(typ).Elem()
 		return dst.Interface()
 	}
+}
+
+// SHA256Hex sha256
+func SHA256Hex(s string) string {
+	b := sha256.Sum256([]byte(s))
+	return hex.EncodeToString(b[:])
+}
+
+// HMacSHA256 hmacsha256
+func HMacSHA256(s, key string) string {
+	hashed := hmac.New(sha256.New, []byte(key))
+	hashed.Write([]byte(s))
+	return string(hashed.Sum(nil))
 }
