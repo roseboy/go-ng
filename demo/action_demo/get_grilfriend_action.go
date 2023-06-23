@@ -4,12 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/roseboy/go-ng/plugin"
+	"github.com/roseboy/go-ng/plugin/action"
 )
 
 // GetGirlfriendRequest Request
 type GetGirlfriendRequest struct {
-	plugin.ActionMeta
+	action.Meta
 	Age int
 }
 
@@ -21,12 +21,12 @@ type GetGirlfriendResponse struct {
 // GetGirlfriend action
 func GetGirlfriend(ctx context.Context, request, response any) error {
 	var req, resp = request.(*GetGirlfriendRequest), response.(*GetGirlfriendResponse)
-	meta := plugin.ExtractActionMeta(ctx)
+	meta := action.ExtractMeta(ctx)
 	fmt.Println(req.AppId)
 	mb, _ := json.Marshal(meta)
 	fmt.Println(string(mb))
 	if req.Age <= 18 {
-		return plugin.NewError(10001, "get girlfriend error")
+		return action.NewError(10001, "get girlfriend error")
 	}
 	resp.Result = "congratulations, you got a girlfriend!!!"
 	return nil

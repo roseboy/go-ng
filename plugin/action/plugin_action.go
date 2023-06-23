@@ -1,4 +1,4 @@
-package plugin
+package action
 
 import (
 	"context"
@@ -21,10 +21,10 @@ const (
 	expireSecond = 10
 )
 
-var ctxMetaKey = &ActionMeta{}
+var ctxMetaKey = &Meta{}
 
-// ActionPlugin action
-type ActionPlugin struct {
+// PluginAction action
+type PluginAction struct {
 	Endpoint       string
 	ActionMap      map[string]Action
 	SignatureCheck bool
@@ -33,7 +33,7 @@ type ActionPlugin struct {
 }
 
 // Config config
-func (p *ActionPlugin) Config(config *ng.PluginConfig) {
+func (p *PluginAction) Config(config *ng.PluginConfig) {
 	path := util.If(strings.HasPrefix(p.Endpoint, "/"), p.Endpoint, "/"+p.Endpoint)
 	config.Name("ng_action_plugin")
 	config.ProxyPass(path, "")
@@ -43,7 +43,7 @@ func (p *ActionPlugin) Config(config *ng.PluginConfig) {
 }
 
 // Interceptor interceptor
-func (p *ActionPlugin) Interceptor(request *ng.Request, response *ng.Response) error {
+func (p *PluginAction) Interceptor(request *ng.Request, response *ng.Response) error {
 	var (
 		err       error
 		requestId string
@@ -63,18 +63,18 @@ func (p *ActionPlugin) Interceptor(request *ng.Request, response *ng.Response) e
 		response.Body, response.Status = string(data), http.StatusOK
 	}()
 
-	var actionMeta ActionMeta
-	err = json.Unmarshal([]byte(request.Body), &actionMeta)
+	var meta Meta
+	err = json.Unmarshal([]byte(request.Body), &meta)
 	if err != nil {
 		return nil
 	}
 
-	requestId = actionMeta.RequestId
+	requestId = meta.RequestId
 	requestId = util.If(requestId == "", fmt.Sprintf("s%d", time.Now().UnixNano()), requestId)
-	actionMeta.RequestId = requestId
+	meta.RequestId = requestId
 	response.SetHeader("Content-Type", "application/json")
 	response.SetHeader("X-Request-Id", requestId)
-	ctx := context.WithValue(context.Background(), ctxMetaKey, &actionMeta)
+	ctx := context.WithValue(context.Background(), ctxMetaKey, &meta)
 
 	if p.SignatureCheck {
 		err = p.checkSignature(ctx, request)
@@ -87,8 +87,8 @@ func (p *ActionPlugin) Interceptor(request *ng.Request, response *ng.Response) e
 	return nil
 }
 
-func (p *ActionPlugin) doAction(ctx context.Context, request *ng.Request, response *ng.Response) error {
-	var meta = ctx.Value(ctxMetaKey).(*ActionMeta)
+func (p *PluginAction) doAction(ctx context.Context, request *ng.Request, response *ng.Response) error {
+	var meta = ctx.Value(ctxMetaKey).(*Meta)
 	meta.Headers = make(map[string]string)
 	for k, v := range request.Headers {
 		meta.Headers[k] = v
@@ -128,15 +128,15 @@ func (p *ActionPlugin) doAction(ctx context.Context, request *ng.Request, respon
 }
 
 // RegisterAction register action
-func (p *ActionPlugin) RegisterAction(actionName string, actionFunc actionFunc, request, response any) {
+func (p *PluginAction) RegisterAction(actionName string, actionFunc actionFunc, request, response any) {
 	if p.ActionMap == nil {
 		p.ActionMap = map[string]Action{}
 	}
 	p.ActionMap[actionName] = NewAction(actionFunc, reflect.TypeOf(request), reflect.TypeOf(response))
 }
 
-// ActionMeta meta
-type ActionMeta struct {
+// Meta meta
+type Meta struct {
 	Headers map[string]string
 
 	Action    string
@@ -186,21 +186,21 @@ func NewError(code int, msg string) error {
 	}
 }
 
-// ExtractActionMeta extract meta
-func ExtractActionMeta(ctx context.Context) *ActionMeta {
-	meta, ok := ctx.Value(ctxMetaKey).(*ActionMeta)
+// ExtractMeta extract meta
+func ExtractMeta(ctx context.Context) *Meta {
+	meta, ok := ctx.Value(ctxMetaKey).(*Meta)
 	if ok {
 		return meta
 	}
 	return nil
 }
 
-func (p *ActionPlugin) checkSignature(ctx context.Context, request *ng.Request) error {
+func (p *PluginAction) checkSignature(ctx context.Context, request *ng.Request) error {
 	if p.AuthInfoFunc == nil {
 		return NewError(http.StatusUnauthorized, "AuthFailure.AuthInfoError")
 	}
 
-	var meta = ctx.Value(ctxMetaKey).(*ActionMeta)
+	var meta = ctx.Value(ctxMetaKey).(*Meta)
 	authorization := strings.Split(request.Headers["Authorization"], ";")
 	if len(authorization) < 2 {
 		return NewError(http.StatusUnauthorized, "AuthFailure.SignatureFailure")

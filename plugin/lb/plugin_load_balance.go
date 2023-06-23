@@ -1,4 +1,4 @@
-package plugin
+package lb
 
 import (
 	"fmt"
@@ -8,8 +8,8 @@ import (
 	"time"
 )
 
-// LoadBalancePlugin load balance
-type LoadBalancePlugin struct {
+// PluginLoadBalance load balance
+type PluginLoadBalance struct {
 	ServerName    string
 	Location      string
 	ProxyPassList []string
@@ -17,7 +17,7 @@ type LoadBalancePlugin struct {
 }
 
 // Config config
-func (p *LoadBalancePlugin) Config(config *ng.PluginConfig) {
+func (p *PluginLoadBalance) Config(config *ng.PluginConfig) {
 	config.Name("ng_load_balance_plugin")
 	if p.ServerName != "" {
 		config.Host(p.ServerName)
@@ -29,7 +29,7 @@ func (p *LoadBalancePlugin) Config(config *ng.PluginConfig) {
 }
 
 // Interceptor interceptor
-func (p *LoadBalancePlugin) Interceptor(request *ng.Request, response *ng.Response) error {
+func (p *PluginLoadBalance) Interceptor(request *ng.Request, response *ng.Response) error {
 	proxyPass := p.PolicyFunc(p.ProxyPassList)
 	request.Url = fmt.Sprintf("%s%s", strings.TrimSuffix(proxyPass, "/"), request.HttpRequest.RequestURI)
 	return ng.Invoke(request, response)

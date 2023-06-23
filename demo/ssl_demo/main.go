@@ -11,23 +11,17 @@ func main() {
 	fmt.Println("open 'https://test.com' in browser")
 	fmt.Println()
 
-	ssl := &plugin.SSLPlugin{
-		CertFile:       "./demo/ssl_demo/test.crt",
-		KeyFile:        "./demo/ssl_demo/test.key",
-		AutoRedirect:   true,
-		HttpServerPort: 80,
-	}
+	ssl := plugin.NewSSLPluginWithAutoRedirect(
+		"./demo/ssl_demo/test.crt",
+		"./demo/ssl_demo/test.key",
+		80)
 
-	lb := &plugin.LoadBalancePlugin{
-		ServerName: "test.com",
-		Location:   "/",
-		ProxyPassList: []string{
-			"http://127.0.0.1:8080",
-			"http://127.0.0.1:9090",
-			"http://127.0.0.1:8081",
-			"http://127.0.0.1:9091",
-		},
-	}
+	lb := plugin.NewLoadBalancePlugin("test.com", "/", []string{
+		"http://127.0.0.1:18080",
+		"http://127.0.0.1:19090",
+		"http://127.0.0.1:18081",
+		"http://127.0.0.1:19091",
+	})
 
 	err := ng.NewServer(443).RegisterPlugins(lb, ssl).Start()
 	if err != nil {

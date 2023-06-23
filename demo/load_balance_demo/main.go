@@ -12,30 +12,21 @@ func main() {
 	fmt.Println("open 'http://localhost:8000/test' in browser")
 	fmt.Println()
 
-	lb := &plugin.LoadBalancePlugin{
-		ServerName: "localhost",
-		Location:   "/test",
-		PolicyFunc: RandPolicyFunc,
-		ProxyPassList: []string{
-			"http://127.0.0.1:8080",
-			"http://127.0.0.1:9090",
-			"http://127.0.0.1:8081",
-			"http://127.0.0.1:9091",
-		},
-	}
+	lb1 := plugin.NewLoadBalancePluginWithPolicy("localhost", "/test", []string{
+		"http://127.0.0.1:8080",
+		"http://127.0.0.1:9090",
+		"http://127.0.0.1:8081",
+		"http://127.0.0.1:9091",
+	}, RandPolicyFunc)
 
-	lb2 := &plugin.LoadBalancePlugin{
-		ServerName: "test.com",
-		Location:   "/",
-		ProxyPassList: []string{
-			"http://127.0.0.1:18080",
-			"http://127.0.0.1:19090",
-			"http://127.0.0.1:18081",
-			"http://127.0.0.1:19091",
-		},
-	}
+	lb2 := plugin.NewLoadBalancePlugin("test.com", "/", []string{
+		"http://127.0.0.1:18080",
+		"http://127.0.0.1:19090",
+		"http://127.0.0.1:18081",
+		"http://127.0.0.1:19091",
+	})
 
-	err := ng.NewServer(8000).RegisterPlugins(lb, lb2).Start()
+	err := ng.NewServer(8000).RegisterPlugins(lb1, lb2).Start()
 	if err != nil {
 		panic(err)
 	}

@@ -1,4 +1,4 @@
-package plugin
+package www
 
 import (
 	"fmt"
@@ -6,13 +6,13 @@ import (
 	"net/http"
 )
 
-// StaticPlugin static file server
-type StaticPlugin struct {
+// PluginStatic static file server
+type PluginStatic struct {
 	WebRoot string
 }
 
 // Config config
-func (p *StaticPlugin) Config(config *ng.PluginConfig) {
+func (p *PluginStatic) Config(config *ng.PluginConfig) {
 	if p.WebRoot == "" {
 		p.WebRoot = "www"
 	}
@@ -21,7 +21,7 @@ func (p *StaticPlugin) Config(config *ng.PluginConfig) {
 }
 
 // Interceptor interceptor
-func (p *StaticPlugin) Interceptor(request *ng.Request, response *ng.Response) error {
+func (p *PluginStatic) Interceptor(request *ng.Request, response *ng.Response) error {
 	fileName := fmt.Sprintf("%s/%s", p.WebRoot, request.HttpRequest.URL.Path)
 	http.ServeFile(response.ResponseWriter, request.HttpRequest, fileName)
 	return nil
