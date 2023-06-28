@@ -2,10 +2,11 @@ package lb
 
 import (
 	"fmt"
-	"github.com/roseboy/go-ng/ng"
 	"math/rand"
 	"strings"
 	"time"
+
+	"github.com/roseboy/go-ng/ng"
 )
 
 // PluginLoadBalance load balance

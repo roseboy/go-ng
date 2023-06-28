@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/roseboy/go-ng/ng"
 	"log"
+
+	"github.com/roseboy/go-ng/ng"
 )
 
 // DemoPlugin demo

@@ -2,11 +2,12 @@ package ng
 
 import (
 	"fmt"
-	"github.com/roseboy/go-ng/util"
 	"log"
 	"net/http"
 	"regexp"
 	"strings"
+
+	"github.com/roseboy/go-ng/util"
 )
 
 type plugin struct {
@@ -49,9 +50,7 @@ func (c *PluginConfig) ProxyPass(location, proxyPass string) {
 
 // Host add intercept host
 func (c *PluginConfig) Host(hosts ...string) {
-	for _, host := range hosts {
-		c.hosts = append(c.hosts, host)
-	}
+	c.hosts = append(c.hosts, hosts...)
 }
 
 // RegisterPlugins 注册插件
