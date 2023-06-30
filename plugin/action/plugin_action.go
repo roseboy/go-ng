@@ -28,8 +28,10 @@ type PluginAction struct {
 	Endpoint       string
 	ActionMap      map[string]Action
 	SignatureCheck bool
+	SignatureFunc  func(args *SignatureArgs) string
 	AuthInfoFunc   func(string) (uint64, string)
-	actionMap      sync.Map
+
+	actionMap sync.Map
 }
 
 // Config config
@@ -39,6 +41,11 @@ func (p *PluginAction) Config(config *ng.PluginConfig) {
 	config.ProxyPass(path, "")
 	for k, v := range p.ActionMap {
 		p.actionMap.Store(k, v)
+	}
+	if p.SignatureCheck {
+		if p.SignatureFunc == nil {
+			p.SignatureFunc = CalcSignatureV1
+		}
 	}
 }
 
@@ -217,7 +224,7 @@ func (p *PluginAction) checkSignature(ctx context.Context, request *ng.Request) 
 	if math.Abs(float64(timestamp-nowTimestamp)) > expireSecond {
 		timestamp = nowTimestamp
 	}
-	sign := CalcSignature(&CalcSignatureArgs{
+	sign := p.SignatureFunc(&SignatureArgs{
 		Service:   p.Endpoint,
 		Timestamp: timestamp,
 		Method:    request.HttpRequest.Method,
@@ -236,8 +243,8 @@ func (p *PluginAction) checkSignature(ctx context.Context, request *ng.Request) 
 	return nil
 }
 
-// CalcSignatureArgs signature args
-type CalcSignatureArgs struct {
+// SignatureArgs signature args
+type SignatureArgs struct {
 	Service   string
 	Timestamp int64
 	Method    string
@@ -247,8 +254,17 @@ type CalcSignatureArgs struct {
 	SecretKey string
 }
 
-// CalcSignature calc signature
-func CalcSignature(args *CalcSignatureArgs) string {
+// CalcSignatureV1 calc signature
+func CalcSignatureV1(args *SignatureArgs) string {
+	hashedPayload := util.SHA256Hex(args.Payload)
+	canonicalRequest := fmt.Sprintf("%d;%s", args.Timestamp, hashedPayload)
+	signatureString := util.HMacSHA256(canonicalRequest, args.SecretKey)
+	signature := hex.EncodeToString([]byte(signatureString))
+	return signature
+}
+
+// CalcSignatureV2 calc signature
+func CalcSignatureV2(args *SignatureArgs) string {
 	hashedPayload := util.SHA256Hex(args.Payload)
 	canonicalRequest := fmt.Sprintf("%s;%s;%s;%d;%s",
 		args.Method,

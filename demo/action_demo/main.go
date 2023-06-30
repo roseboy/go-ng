@@ -12,14 +12,8 @@ import (
 func main() {
 	timestamp := time.Now().Unix() + 5
 	body := fmt.Sprintf(`{"Action":"GetGirlfriend","Age":20,"Timestamp":%d,"AppId":111}`, timestamp)
-	sign := action.CalcSignature(&action.CalcSignatureArgs{
-		Service:   "/api",
-		Timestamp: timestamp,
-		Method:    "POST",
-		Host:      "localhost:8000",
-		URI:       "/api?a=1",
-		Payload:   body,
-		SecretKey: secretKey,
+	sign := action.CalcSignatureV1(&action.SignatureArgs{
+		Timestamp: timestamp, Payload: body, SecretKey: secretKey,
 	})
 	authorization := fmt.Sprintf("%s;%s", secretId, sign)
 
