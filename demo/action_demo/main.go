@@ -22,7 +22,7 @@ func main() {
 	fmt.Println()
 
 	plg := plugin.NewActionPlugin("/api", true, GetAuthInfo)
-	plg.RegisterAction("GetGirlfriend", GetGirlfriend, &GetGirlfriendRequest{}, &GetGirlfriendResponse{})
+	plg.RegisterAction(GetGirlfriend, &GetGirlfriendRequest{}, &GetGirlfriendResponse{})
 
 	err := ng.NewServer(8000).RegisterPlugins(plg).Start()
 	if err != nil {

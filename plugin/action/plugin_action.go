@@ -9,6 +9,7 @@ import (
 	"math"
 	"net/http"
 	"reflect"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -135,7 +136,17 @@ func (p *PluginAction) doAction(ctx context.Context, request *ng.Request, respon
 }
 
 // RegisterAction register action
-func (p *PluginAction) RegisterAction(actionName string, actionFunc actionFunc, request, response any) {
+func (p *PluginAction) RegisterAction(actionFunc actionFunc, request, response any) {
+	if p.ActionMap == nil {
+		p.ActionMap = map[string]Action{}
+	}
+	actionName := runtime.FuncForPC(reflect.ValueOf(actionFunc).Pointer()).Name()
+	actionName = actionName[strings.LastIndex(actionName, ".")+1:]
+	p.ActionMap[actionName] = NewAction(actionFunc, reflect.TypeOf(request), reflect.TypeOf(response))
+}
+
+// RegisterActionWithName register action
+func (p *PluginAction) RegisterActionWithName(actionName string, actionFunc actionFunc, request, response any) {
 	if p.ActionMap == nil {
 		p.ActionMap = map[string]Action{}
 	}
