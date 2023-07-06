@@ -20,6 +20,7 @@ type plugin struct {
 }
 
 type pluginWrapper struct {
+	location  string
 	proxyPass string
 	plugin    *plugin
 }
@@ -43,8 +44,11 @@ func (c *PluginConfig) Name(name string) {
 	c.name = name
 }
 
-// ProxyPass  add proxy pass
-func (c *PluginConfig) ProxyPass(location, proxyPass string) {
+// Location  add location proxy pass
+func (c *PluginConfig) Location(location, proxyPass string) {
+	if !strings.HasPrefix(location, "/") {
+		panic("location must start with /")
+	}
 	c.locations[location] = proxyPass
 }
 
@@ -99,9 +103,10 @@ func (s *server) getPluginByRequest(request *http.Request) []*pluginWrapper {
 		}
 
 		var (
-			weight    int
-			maxPlg    *plugin
-			proxyPass string
+			weight      int
+			maxPlg      *plugin
+			proxyPass   string
+			locationStr string
 		)
 
 		for location, reg := range plg.locationRegexps {
@@ -112,10 +117,12 @@ func (s *server) getPluginByRequest(request *http.Request) []*pluginWrapper {
 				weight = plg.locationWeights[location]
 				maxPlg = plg
 				proxyPass = plg.locationProxyPasses[location]
+				locationStr = location
 			}
 		}
 		if maxPlg != nil {
 			plgWrappers = append(plgWrappers, &pluginWrapper{
+				location:  locationStr,
 				proxyPass: proxyPass,
 				plugin:    maxPlg,
 			})

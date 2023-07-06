@@ -26,7 +26,7 @@ func (p *PluginLoadBalance) Config(config *ng.PluginConfig) {
 	if p.PolicyFunc == nil {
 		p.PolicyFunc = DefaultPolicyFunc
 	}
-	config.ProxyPass(p.Location, "")
+	config.Location(p.Location, "")
 }
 
 // Interceptor interceptor

@@ -78,8 +78,15 @@ func (s *server) httpHandler(rw http.ResponseWriter, request *http.Request) {
 }
 
 func doInterceptor(req *Request, resp *Response, plg *pluginWrapper) error {
-	if plg.proxyPass != "" {
-		req.Url = fmt.Sprintf("%s%s", strings.TrimSuffix(plg.proxyPass, "/"), req.HttpRequest.RequestURI)
+	if plg.proxyPass == "" {
+		return plg.plugin.interceptor(req, resp)
+	}
+
+	if strings.HasSuffix(plg.proxyPass, "/") {
+		req.Url = fmt.Sprintf("%s%s", plg.proxyPass,
+			strings.TrimLeft(req.HttpRequest.RequestURI, plg.location))
+	} else {
+		req.Url = fmt.Sprintf("%s%s", plg.proxyPass, req.HttpRequest.RequestURI)
 	}
 	return plg.plugin.interceptor(req, resp)
 }

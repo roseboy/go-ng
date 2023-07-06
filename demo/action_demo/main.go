@@ -2,10 +2,11 @@ package main
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/roseboy/go-ng/ng"
 	"github.com/roseboy/go-ng/plugin"
 	"github.com/roseboy/go-ng/plugin/action"
-	"time"
 )
 
 func main() {

@@ -46,7 +46,7 @@ type pluginRedirectSSL struct {
 // Config config
 func (p *pluginRedirectSSL) Config(config *ng.PluginConfig) {
 	config.Name("ng_ssl_plugin_redirect")
-	config.ProxyPass("/", "")
+	config.Location("/", "")
 }
 
 // Interceptor interceptor

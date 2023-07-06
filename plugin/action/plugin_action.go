@@ -39,7 +39,7 @@ type PluginAction struct {
 func (p *PluginAction) Config(config *ng.PluginConfig) {
 	path := util.If(strings.HasPrefix(p.Endpoint, "/"), p.Endpoint, "/"+p.Endpoint)
 	config.Name("ng_action_plugin")
-	config.ProxyPass(path, "")
+	config.Location(path, "")
 	for k, v := range p.ActionMap {
 		p.actionMap.Store(k, v)
 	}
