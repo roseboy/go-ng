@@ -136,21 +136,18 @@ func (p *PluginAction) doAction(ctx context.Context, request *ng.Request, respon
 }
 
 // RegisterAction register action
-func (p *PluginAction) RegisterAction(actionFunc actionFunc, request, response any) {
-	if p.ActionMap == nil {
-		p.ActionMap = map[string]Action{}
-	}
+func (p *PluginAction) RegisterAction(actionFunc actionFunc, reqType, respType reflect.Type) {
 	actionName := runtime.FuncForPC(reflect.ValueOf(actionFunc).Pointer()).Name()
 	actionName = actionName[strings.LastIndex(actionName, ".")+1:]
-	p.ActionMap[actionName] = NewAction(actionFunc, reflect.TypeOf(request), reflect.TypeOf(response))
+	p.RegisterActionWithName(actionName, actionFunc, reqType, respType)
 }
 
 // RegisterActionWithName register action
-func (p *PluginAction) RegisterActionWithName(actionName string, actionFunc actionFunc, request, response any) {
+func (p *PluginAction) RegisterActionWithName(actionName string, actionFunc actionFunc, reqType, respType reflect.Type) {
 	if p.ActionMap == nil {
 		p.ActionMap = map[string]Action{}
 	}
-	p.ActionMap[actionName] = NewAction(actionFunc, reflect.TypeOf(request), reflect.TypeOf(response))
+	p.ActionMap[actionName] = NewAction(actionFunc, reqType, respType)
 }
 
 // Meta meta

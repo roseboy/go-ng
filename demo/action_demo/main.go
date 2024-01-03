@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"reflect"
 	"time"
 
 	"github.com/roseboy/go-ng/ng"
@@ -11,9 +12,8 @@ import (
 
 func main() {
 	printTestInfo()
-
 	plg := plugin.NewActionPlugin("/api", true, GetAuthInfo)
-	plg.RegisterAction(GetGirlfriend, &GetGirlfriendRequest{}, &GetGirlfriendResponse{})
+	plg.RegisterAction(GetGirlfriend, reflect.TypeOf(new(GetGirlfriendRequest)), reflect.TypeOf(new(GetGirlfriendResponse)))
 
 	err := ng.NewServer(8000).RegisterPlugins(plg).Start()
 	if err != nil {
