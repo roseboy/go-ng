@@ -13,6 +13,7 @@ import (
 
 type server struct {
 	Port                  int
+	httpServer            *http.Server
 	certFile, keyFile     string
 	pluginList            []*plugin
 	cacheMappingPluginURL sync.Map
@@ -27,8 +28,29 @@ func NewServer(port int) *server {
 	}
 }
 
-// Start start a ng server
+// NewServerWithHTTPServer new
+func NewServerWithHTTPServer(httpServer *http.Server, port int) *server {
+	return &server{
+		Port:                  port,
+		httpServer:            httpServer,
+		pluginList:            make([]*plugin, 0),
+		cacheMappingPluginURL: sync.Map{},
+	}
+}
+
+// Start a ng server
 func (s *server) Start() (err error) {
+	if s.httpServer != nil {
+		s.httpServer.Addr = fmt.Sprintf(":%d", s.Port)
+		s.httpServer.Handler = http.HandlerFunc(s.httpHandler)
+		log.Printf("ng server started on port: %d", s.Port)
+		if s.certFile != "" && s.keyFile != "" {
+			err = s.httpServer.ListenAndServeTLS(s.certFile, s.keyFile)
+		} else {
+			err = s.httpServer.ListenAndServe()
+		}
+		return err
+	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", s.httpHandler)
 	addr := fmt.Sprintf(":%d", s.Port)
