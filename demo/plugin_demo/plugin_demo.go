@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 
 	"github.com/roseboy/go-ng/ng"
@@ -17,12 +18,12 @@ func (v *DemoPlugin) Config(config *ng.PluginConfig) {
 }
 
 // Interceptor interceptor
-func (v *DemoPlugin) Interceptor(request *ng.Request, response *ng.Response) error {
+func (v *DemoPlugin) Interceptor(ctx context.Context, request *ng.Request, response *ng.Response) error {
 	log.Println("===> DemoPlugin before...")
 	request.Headers["ProxyPass"] = "NG"
 	log.Println(request.HttpRequest.RequestURI)
 	request.AllowRedirect = true
-	err := ng.Invoke(request, response)
+	err := ng.Invoke(ctx, request, response)
 	log.Println("===> DemoPlugin after...")
 
 	return err

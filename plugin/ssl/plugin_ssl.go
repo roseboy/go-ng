@@ -1,6 +1,7 @@
 package ssl
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strings"
@@ -34,7 +35,7 @@ func (p *PluginSSL) Config(config *ng.PluginConfig) {
 }
 
 // Interceptor interceptor
-func (p *PluginSSL) Interceptor(request *ng.Request, response *ng.Response) error {
+func (p *PluginSSL) Interceptor(ctx context.Context, request *ng.Request, response *ng.Response) error {
 	return nil
 }
 
@@ -50,7 +51,7 @@ func (p *pluginRedirectSSL) Config(config *ng.PluginConfig) {
 }
 
 // Interceptor interceptor
-func (p *pluginRedirectSSL) Interceptor(request *ng.Request, response *ng.Response) error {
+func (p *pluginRedirectSSL) Interceptor(ctx context.Context, request *ng.Request, response *ng.Response) error {
 	if !strings.HasPrefix(strings.ToLower(request.HttpRequest.Proto), "https") {
 		host := strings.Split(request.HttpRequest.Host, ":")[0]
 		uri := request.HttpRequest.RequestURI

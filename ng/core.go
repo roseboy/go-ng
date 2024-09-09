@@ -2,6 +2,7 @@ package ng
 
 import (
 	"compress/gzip"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -71,6 +72,7 @@ func (s *server) WithTLS(certFile, keyFile string) *server {
 
 // httpHandler http handle
 func (s *server) httpHandler(rw http.ResponseWriter, request *http.Request) {
+	ctx := context.Background()
 	plugins := s.getPluginByRequest(request)
 	if len(plugins) == 0 {
 		http.NotFound(rw, request)
@@ -81,7 +83,7 @@ func (s *server) httpHandler(rw http.ResponseWriter, request *http.Request) {
 	req := newRequest().HttpRequest(request).GetRequest()
 	req.plugins = plugins
 
-	err := doInterceptor(req, resp, req.plugins[req.pluginPos])
+	err := doInterceptor(ctx, req, resp, req.plugins[req.pluginPos])
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
@@ -99,9 +101,9 @@ func (s *server) httpHandler(rw http.ResponseWriter, request *http.Request) {
 	}
 }
 
-func doInterceptor(req *Request, resp *Response, plg *pluginWrapper) error {
+func doInterceptor(ctx context.Context, req *Request, resp *Response, plg *pluginWrapper) error {
 	if plg.proxyPass == "" {
-		return plg.plugin.interceptor(req, resp)
+		return plg.plugin.interceptor(ctx, req, resp)
 	}
 
 	if strings.HasSuffix(plg.proxyPass, "/") {
@@ -110,14 +112,14 @@ func doInterceptor(req *Request, resp *Response, plg *pluginWrapper) error {
 	} else {
 		req.Url = fmt.Sprintf("%s%s", plg.proxyPass, req.HttpRequest.RequestURI)
 	}
-	return plg.plugin.interceptor(req, resp)
+	return plg.plugin.interceptor(ctx, req, resp)
 }
 
 // Invoke invoke
-func Invoke(req *Request, resp *Response) error {
+func Invoke(ctx context.Context, req *Request, resp *Response) error {
 	req.pluginPos++
 	if req.pluginPos < len(req.plugins) {
-		return doInterceptor(req, resp, req.plugins[req.pluginPos])
+		return doInterceptor(ctx, req, resp, req.plugins[req.pluginPos])
 	}
 
 	if len(req.Url) == 0 {

@@ -1,6 +1,7 @@
 package ng
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -16,7 +17,7 @@ type plugin struct {
 	locationProxyPasses map[string]string
 	locationRegexps     map[string]*regexp.Regexp
 	locationWeights     map[string]int
-	interceptor         func(request *Request, response *Response) error
+	interceptor         func(ctx context.Context, request *Request, response *Response) error
 }
 
 type pluginWrapper struct {
@@ -27,7 +28,7 @@ type pluginWrapper struct {
 
 // pluginInterface plugin interface
 type pluginInterface interface {
-	Interceptor(request *Request, response *Response) error
+	Interceptor(ctx context.Context, request *Request, response *Response) error
 	Config(config *PluginConfig)
 }
 

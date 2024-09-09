@@ -1,6 +1,7 @@
 package www
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -22,7 +23,7 @@ func (p *PluginStatic) Config(config *ng.PluginConfig) {
 }
 
 // Interceptor interceptor
-func (p *PluginStatic) Interceptor(request *ng.Request, response *ng.Response) error {
+func (p *PluginStatic) Interceptor(ctx context.Context, request *ng.Request, response *ng.Response) error {
 	fileName := fmt.Sprintf("%s/%s", p.WebRoot, request.HttpRequest.URL.Path)
 	http.ServeFile(response.ResponseWriter, request.HttpRequest, fileName)
 	return nil

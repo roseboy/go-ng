@@ -13,13 +13,9 @@ func NewStaticFilePlugin(webRoot string) *www.PluginStatic {
 }
 
 // NewActionPlugin action
-func NewActionPlugin(endpoint string, signatureCheck bool, authInfoFunc func(string) (uint64, string),
-) *action.PluginAction {
+func NewActionPlugin(endpoint string) *action.PluginAction {
 	return &action.PluginAction{
-		Endpoint:       endpoint,
-		SignatureCheck: signatureCheck,
-		AuthInfoFunc:   authInfoFunc,
-		SignatureFunc:  action.CalcSignatureV1,
+		Endpoint: endpoint,
 	}
 }
 

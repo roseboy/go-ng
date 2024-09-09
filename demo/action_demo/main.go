@@ -2,20 +2,23 @@ package main
 
 import (
 	"fmt"
+	"github.com/roseboy/go-ng/plugin/auth"
 	"reflect"
 	"time"
 
 	"github.com/roseboy/go-ng/ng"
 	"github.com/roseboy/go-ng/plugin"
-	"github.com/roseboy/go-ng/plugin/action"
 )
 
 func main() {
 	printTestInfo()
-	plg := plugin.NewActionPlugin("/api", true, GetAuthInfo)
+	plg := plugin.NewActionPlugin("/api")
 	plg.RegisterAction(GetGirlfriend, reflect.TypeOf(new(GetGirlfriendRequest)), reflect.TypeOf(new(GetGirlfriendResponse)))
 
-	err := ng.NewServer(8000).RegisterPlugins(plg).Start()
+	//actionAuthPlg := &auth.PluginActionAuth{AuthLocation: "/api", AuthInfoFunc: GetAuthInfo}
+	actionAuthPlg := &auth.PluginBasicAuth{AuthLocation: "/api", GetAuthInfo: GetBasicAuthInfo}
+
+	err := ng.NewServer(8000).RegisterPlugins(actionAuthPlg, plg).Start()
 	if err != nil {
 		panic(err)
 	}
@@ -24,7 +27,7 @@ func main() {
 func printTestInfo() {
 	timestamp := time.Now().Unix() + 5
 	body := fmt.Sprintf(`{"Action":"GetGirlfriend","Age":20,"Timestamp":%d,"AppId":111}`, timestamp)
-	sign := action.CalcSignatureV1(&action.SignatureArgs{
+	sign := auth.CalcSignatureV1(&auth.SignatureArgs{
 		Timestamp: timestamp, Payload: body, SecretKey: secretKey,
 	})
 	authorization := fmt.Sprintf("%s;%s", secretId, sign)

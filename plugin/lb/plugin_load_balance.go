@@ -1,6 +1,7 @@
 package lb
 
 import (
+	"context"
 	"fmt"
 	"math/rand"
 	"strings"
@@ -30,10 +31,10 @@ func (p *PluginLoadBalance) Config(config *ng.PluginConfig) {
 }
 
 // Interceptor interceptor
-func (p *PluginLoadBalance) Interceptor(request *ng.Request, response *ng.Response) error {
+func (p *PluginLoadBalance) Interceptor(ctx context.Context, request *ng.Request, response *ng.Response) error {
 	proxyPass := p.PolicyFunc(p.ProxyPassList)
 	request.Url = fmt.Sprintf("%s%s", strings.TrimSuffix(proxyPass, "/"), request.HttpRequest.RequestURI)
-	return ng.Invoke(request, response)
+	return ng.Invoke(ctx, request, response)
 }
 
 // DefaultPolicyFunc default policy
