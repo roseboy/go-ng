@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"github.com/roseboy/go-ng/plugin/auth"
-	"reflect"
 	"time"
 
 	"github.com/roseboy/go-ng/ng"
@@ -13,12 +12,12 @@ import (
 func main() {
 	printTestInfo()
 	plg := plugin.NewActionPlugin("/api")
-	plg.RegisterAction(GetGirlfriend, reflect.TypeOf(new(GetGirlfriendRequest)), reflect.TypeOf(new(GetGirlfriendResponse)))
+	plgParams := plugin.NewActionParamsPlugin("/api")
 
 	//actionAuthPlg := &auth.PluginActionAuth{AuthLocation: "/api", AuthInfoFunc: GetAuthInfo}
-	actionAuthPlg := &auth.PluginBasicAuth{AuthLocation: "/api", GetAuthInfo: GetBasicAuthInfo}
+	//actionAuthPlg := &auth.PluginBasicAuth{AuthLocation: "/api", GetAuthInfo: GetBasicAuthInfo}
 
-	err := ng.NewServer(8000).RegisterPlugins(actionAuthPlg, plg).Start()
+	err := ng.NewServer(8000).RegisterPlugins(plgParams, plg).Start()
 	if err != nil {
 		panic(err)
 	}

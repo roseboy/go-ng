@@ -14,7 +14,16 @@ func NewStaticFilePlugin(webRoot string) *www.PluginStatic {
 
 // NewActionPlugin action
 func NewActionPlugin(endpoint string) *action.PluginAction {
-	return &action.PluginAction{
+	actionPlg := &action.PluginAction{
+		Endpoint: endpoint,
+	}
+	action.RegisterInitAction(actionPlg)
+	return actionPlg
+}
+
+// NewActionParamsPlugin action
+func NewActionParamsPlugin(endpoint string) *action.PluginActionParams {
+	return &action.PluginActionParams{
 		Endpoint: endpoint,
 	}
 }

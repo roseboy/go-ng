@@ -18,6 +18,10 @@ import (
 
 const actionMetaKey = "CTX_ACTION_META_KEY"
 
+var initActionMap = make(map[string]map[string]actionFunc)
+var initActionReqMap = make(map[string]map[string]reflect.Type)
+var initActionRespMap = make(map[string]map[string]reflect.Type)
+
 // PluginAction action
 type PluginAction struct {
 	Endpoint  string
@@ -189,4 +193,36 @@ func ExtractMeta(ctx context.Context) *Meta {
 		return meta
 	}
 	return nil
+}
+
+// RegisterAction register action
+func RegisterAction(endpoint string, actionFunc actionFunc, reqType, respType reflect.Type) {
+	actionName := runtime.FuncForPC(reflect.ValueOf(actionFunc).Pointer()).Name()
+	actionName = actionName[strings.LastIndex(actionName, ".")+1:]
+	RegisterActionWithName(endpoint, actionName, actionFunc, reqType, respType)
+}
+
+// RegisterActionWithName register action
+func RegisterActionWithName(endpoint, actionName string, actFunc actionFunc, reqType, respType reflect.Type) {
+	path := util.If(strings.HasPrefix(endpoint, "/"), endpoint, "/"+endpoint)
+	if _, ok := initActionMap[path]; !ok {
+		initActionMap[path] = map[string]actionFunc{}
+		initActionReqMap[path] = map[string]reflect.Type{}
+		initActionRespMap[path] = map[string]reflect.Type{}
+	}
+	initActionMap[path][actionName] = actFunc
+	initActionReqMap[path][actionName] = reqType
+	initActionRespMap[path][actionName] = respType
+}
+
+// RegisterInitAction .
+func RegisterInitAction(action *PluginAction) {
+	for path, actions := range initActionMap {
+		if action.Endpoint != path {
+			continue
+		}
+		for name, act := range actions {
+			action.RegisterActionWithName(name, act, initActionReqMap[path][name], initActionRespMap[path][name])
+		}
+	}
 }

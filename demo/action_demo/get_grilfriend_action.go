@@ -4,9 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"reflect"
 
 	"github.com/roseboy/go-ng/plugin/action"
 )
+
+func init() {
+	action.RegisterAction("/api", GetGirlfriend,
+		reflect.TypeOf(new(GetGirlfriendRequest)), reflect.TypeOf(new(GetGirlfriendResponse)))
+}
 
 // GetGirlfriendRequest Request
 type GetGirlfriendRequest struct {
